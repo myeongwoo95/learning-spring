@@ -81,6 +81,10 @@
                          		
                          	</ul>
                          </div>
+                         
+                         <div class="panel-footer">
+                         	
+                         </div>
             		</div>
             	</div>
             </div>
@@ -114,8 +118,8 @@
                         <div class="modal-footer">
                            <button id="modalModBtn" type="button" class="btn btn-warning">Modify</button>
                            <button id="modalRemoveBtn" type="button" class="btn btn-danger">Remove</button>
+                           <button id="modalRegisterBtn" type="button" class="btn btn-primary">Register</button>
                            <button id="modalCloseBtn" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                           <button id="modalClassBtn" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                         </div>
                     </div>
                     <!-- /.modal-content -->
@@ -134,14 +138,24 @@
             	
             	showList(1);
             	
+            	/* show List  */
             	function showList(page){
-            		replyService.getList({bno:bnoValue, page:page||1}, function(list){
+            		
+            		console.log("show list " + page);
+            		
+            		replyService.getList({bno:bnoValue, page:page||1}, function(replyCnt, list){
+            			
+            			console.log("replyCnt: " + replyCnt);
+            			
+            			if(page == -1){
+            				pageNum = Math.ceil(replyCnt/10.0);
+            				showList(pageNum);
+            				return;
+            			}
             			
             			var str="";
             			
             			if(list == null || list.length == 0){
-            				replyUL.html("");
-            				
             				return;
             			}
             			
@@ -158,63 +172,160 @@
             			}
             			
             			replyUL.html(str);
+            			
+            			showReplyPage(replyCnt);
             		});
             	}
             	
-            	/* replyService.add(
-            			{reply:"JS Test", replyer:"tester", bno:bnoValue}
-         				,
-         				function(result){
-         					alert("RESULT: " + result);
-         				}
-            	); */ 
+            	/* comment pagination */
+            	var pageNum = 1;
+            	var replyPageFooter = $(".panel-footer");
             	
-            	/* replyService.getList({bno:bnoValue, page:1}, function(list){
+            	function showReplyPage(replyCnt){
             		
-            		for(var i = 0, len = list.length||0; i < len; i++){
-            			console.log(list[i]);
+            		var endNum = Math.ceil(pageNum / 10.0) * 10;
+            		var startNum = endNum - 9;
+            		
+            		var prev = startNum != 1;
+            		var next = false;
+            		
+            		if(endNum * 10 >= replyCnt){
+            			endNum = Math.ceil(replyCnt/10.0);
             		}
-            	}); */
-            	
-            	/* replyService.remove(128, function(count){
             		
-            		console.log(count);
-            		
-            		if(count === "success"){
-            			alert("REMOVED");
+            		if(endNum * 10 < replyCnt){
+            			next = true;
             		}
-            	},function(err){
-            		alert("ERROR....");
-            	}); */
+            		
+            		var str = "<ul class='pagination pull-right'>";
+            		
+            		if(prev){
+            			str += "<li class='page-item'><a class='page-link' href='"+(startNum-1)+"'>Previous</a></li>";
+            		}
+            		
+            		for(var i = startNum ; i <= endNum; i++){
+            			
+            			var active = pageNum == i? "active":"";
+            			
+            			str+="<li class='page-item "+active+"'><a class='page-link' href='"+i+"'>"+i+"</a></li>";
+            		}
+            		
+            		if(next){
+            			str += "<li class='page-item'><a class='page-link' href='"+(endNum+1)+"'>Next</a></li>";
+            		}
+            		
+            		str += "</ul></div>";
+            		
+            		replyPageFooter.html(str);
+            	}
             	
-            	/* replyService.update({
-            		rno : 127,
-            		bno : bnoValue,
-            		reply : "Modified Reply...."
-            	}, function(result){
-            		alert("수정완료...");
-            	}); */
-            	
-            	/* replyService.get(127, function(data){
-            		console.log(data);
-            	}); */
-            	
+            	/* comments page click */
+            	replyPageFooter.on("click", "li a", function(e){
+            		e.preventDefault();
+            		console.log("page click");
+            		
+            		var targetPageNum = $(this).attr("href");
+            		
+            		console.log("targetPageNum: " + targetPageNum);
+            		
+            		pageNum = targetPageNum;
+            		
+            		showList(pageNum);
+            	});
             	
             	/* Modal */
             	var modal = $(".modal");
+            	
             	var modalInputReply = modal.find("input[name='reply']");
             	var modalInputReplyer = modal.find("input[name='replyer']");
             	var modalInputReplyDate = modal.find("input[name='replyDate']");
             	
             	var modalModBtn = $("#modalModBtn");
-            	var modalRemoveBtn = $("#modalModBtn");
-            	var modalRegisterBtn = $("#modalModBtn");
+            	var modalRemoveBtn = $("#modalRemoveBtn");
+            	var modalRegisterBtn = $("#modalRegisterBtn");
             	
+            	/* open resiger modal window */
             	$("#addReplyBtn").on("click", function(e){
+            		
+            		modal.find("input").val("");
+            		modalInputReplyDate.closest("div").hide();
+            		modal.find("button[id != 'modalCloseBtn']").hide()
+            		
+            		modalRegisterBtn.show();
             		
             		$(".modal").modal("show");
             	})
             	
+            	/* register */
+            	modalRegisterBtn.on("click", function(e){
+            		
+            		var reply = {
+            			reply: modalInputReply.val(),
+            			replyer: modalInputReplyer.val(),
+            			bno: bnoValue
+            		};
+            		
+            		replyService.add(reply, function(result){
+            			
+            			alert(result);
+            			
+            			modal.find("input").val("");
+            			modal.modal("hide");
+            			
+            			showList(-1);
+            		})
+            		
+            	})
+            	
+            	/* modify */
+            	modalModBtn.on("click", function(e){
+            		
+            		var reply = {rno:modal.data("rno"), reply:modalInputReply.val()};
+            		
+            		replyService.update(reply, function(result){
+            			
+            			alert(result);
+            			modal.modal("hide");
+            			showList(pageNum);
+            		});
+            	});
+            	
+            	/* delete */
+            	modalRemoveBtn.on("click", function(e){
+            		
+            		var rno = modal.data("rno");
+            		
+            		replyService.remove(rno, function(result){
+						
+            			alert(result);
+            			modal.modal("hide");
+            			showList(pageNum);
+            		});
+            	});
+            	
+            	/* open comment modal window with event delegation skill */
+            	$(".chat").on("click", "li", function(e){
+            		
+            		var rno = $(this).data("rno");
+            		
+            		replyService.get(rno, function(reply){
+            			
+            			modalInputReply.val(reply.reply);
+                    	modalInputReplyer.val(reply.replyer);
+                    	modalInputReplyDate.val(replyService.displayTime(reply.replyDate))
+            			.attr("readonly", "readonly");
+                    	modal.data("rno", reply.rno)
+                    	
+                    	modal.find("button[id!='modalCloseBtn']").hide();
+                    	modalModBtn.show();
+                    	modalRemoveBtn.show();
+                    	
+                    	$(".modal").modal("show");
+            		})
+            		
+            		console.log(rno);
+            	});
+
             	/* Sending */
             	var operForm = $("#operForm");
             	
@@ -229,6 +340,7 @@
            			operForm.attr("action", "/board/list")
            			operForm.submit();
             	})
+            	
             })
             </script>
             
