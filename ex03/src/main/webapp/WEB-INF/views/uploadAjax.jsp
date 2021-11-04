@@ -49,6 +49,15 @@
 	</script>
 	
 	<script>
+		/* 
+		$(document).ready() 바깥쪽에 작성하는 이유는 나중에
+		<a> 태그에 직접 showImage()를 호출할 수 있는 방식으로 작성하기 위해 
+		ready() 안에 작성하는 경우 함수 호출 시 정의되지 않은 함수라고 에러 출력가 출력됨
+		*/
+		function showImage(fileCallPath){
+			alert(fileCallPath);
+		}
+		
 		$(document).ready(function(){
 			
 			var cloneObj = $(".uploadDiv").clone();
@@ -68,7 +77,6 @@
 					alert("해당 종류의 파일은 업로드 할 수 없습니다.");
 					return false;
 				}
-				
 				return true;
 			}
 			
@@ -98,6 +106,7 @@
 					contentType: false,
 					data: formData,
 					type: 'POST',
+					dataType: 'json',
 					success: function(result){
 						console.log(result)
 						
@@ -105,7 +114,7 @@
 						
 						$(".uploadDiv").html(cloneObj.html());
 						
-					}
+					}  
 				});
 			})
 			
@@ -116,12 +125,18 @@
 				$(uploadResultArr).each(function(index, obj){
 					
 					if(!obj.image){
-						str += "<li><img src='/resources/img/attach.png'>"+obj.fileName+"</li>";
+						
+						var fileCallPath = encodeURIComponent(obj.uploadPath + "/" + obj.uuid + "_" + obj.fileName);
+						str += "<li><a href='/download?fileName="+fileCallPath+"'><img src='/resources/img/attach.png'>"+obj.fileName+"</a></li>";
+						
 					} else{
 						
 						var fileCallPath = encodeURIComponent(obj.uploadPath + "/s_" + obj.uuid + "_" + obj.fileName);
+							
+						var originPath = obj.uploadPath + "\\" + obj.uuid + "_" + obj.fileName;
+						originPath = originPath.replace(new RegExp(/\\/g), "/");
 						
-						str += "<li><img src='/display?fileName="+fileCallPath+"'></li>";
+						str += "<li><a href=\"javascript:showImage(\'"+originPath+"\')\"><img src='/display?fileName="+fileCallPath+"'></a></li>";
 					}
 					
 				});
