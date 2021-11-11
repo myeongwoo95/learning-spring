@@ -176,7 +176,7 @@ public class UploadController {
 		}
 	}
 	
-	//Ajax를 이용하는 파일 업로드
+	//Ajax 파일 업로드
 	@GetMapping("/uploadAjax")
 	public void uploadAjax() {
 		
