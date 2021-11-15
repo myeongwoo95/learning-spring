@@ -25,6 +25,10 @@
 	</div>
 	
 	<div>
+		<input type="checkbox" name="remember-me"> Remember Me
+	</div>
+	
+	<div>
 		<input type="submit">
 	</div>
 	

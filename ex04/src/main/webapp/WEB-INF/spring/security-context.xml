@@ -12,45 +12,33 @@
 	<bean id="bcryptPasswordEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"/>
 	<bean id="customUserDetailsService" class="org.zerock.security.CustomUserDetailsService"/>
 	
-	
 	<security:http auto-config="true" use-expressions="true">
 		<security:intercept-url pattern="/sample/all" access="permitAll"/>
 		<security:intercept-url pattern="/sample/member" access="hasRole('ROLE_MEMBER')"/>
 		<security:intercept-url pattern="/sample/admin" access="hasRole('ROLE_ADMIN')"/>
 		
+		<!-- 로그인 성공시, 권한 없을 시, 자동로그인, 로그아웃 시 핸들링 -->
 		<security:form-login login-page="/customLogin" authentication-success-handler-ref="customLoginSuccess" />
 		
-		<!-- <security:access-denied-handler error-page="/accessError"/> -->
 		<security:access-denied-handler ref="customAccessDenied"/>
+		<!-- <security:access-denied-handler error-page="/accessError"/> // 단순 페이지 지정-->
 		
-		<security:logout logout-url="/customLogout" invalidate-session="true"/>
+		<security:remember-me data-source-ref="dataSource" token-validity-seconds="604800"/>
+		
+		<security:logout logout-url="/customLogout" invalidate-session="true" delete-cookies="remember-me, JSESSION_ID" />
 		
 		<!-- <security:csrf disabled="true"/> -->
-		
 	</security:http>
 	
 	<security:authentication-manager>
-		<security:authentication-provider user-service-ref="customUserDetailsService">
-			<!-- InMemoryUserDetailsManager 방식 -->
+		<security:authentication-provider user-service-ref="customUserDetailsService"> <!-- CumstomUserDetailsService 을 위한 속성 추가 -->
+			<!-- JdbcUserDetailsManager 방식 // -->
 			<!--
-			<security:user-service>
-			
-				<security:user name="member" password="{noop}member" authorities="ROLE_MEMBER"/>
-				
-				<security:user name="admin" password="{noop}admin" authorities="ROLE_MEMBER, ROLE_ADMIN"/>
-				
-			</security:user-service>
-			-->
-			
-			<!-- JdbcUserDetailsManager 방식 // -> provider 속성으로 custom 한것을 사용-->
-			<!-- 
 			<security:jdbc-user-service data-source-ref="dataSource"
 			 users-by-username-query="select userid, userpw, enabled from tbl_member where userid = ?"
 			 authorities-by-username-query="select userid, auth from tbl_member_auth where userid = ?"/> 
-			 -->
-			
+			-->
 			<security:password-encoder ref="bcryptPasswordEncoder"/>
-			
 		</security:authentication-provider>
 	</security:authentication-manager>
 
